@@ -1,0 +1,25 @@
+{
+    "token": "YOUR_BOT_TOKEN_HERE",
+    "default_prefix": "!",
+    "owner_ids": [],
+    "database_url": "sqlite:///moderation.db",
+    "embed_color": 65280,
+    "support_server": "",
+    "invite_link": "",
+    "moderation": {
+        "auto_dehoist": true,
+        "auto_delete_invites": false,
+        "spam_detection": true,
+        "raid_protection": true,
+        "max_mentions": 5,
+        "max_emoji": 10,
+        "slowmode_threshold": 5
+    },
+    "logging": {
+        "mod_actions": true,
+        "message_edits": true,
+        "message_deletes": true,
+        "member_updates": true,
+        "voice_updates": false
+    }
+}
