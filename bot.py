@@ -81,8 +81,8 @@ class BallerMemesBot(commands.Bot):
                 json.dump(default_config, f, indent=4)
             return default_config
     
-    async def get_prefix(self, bot, message):
-        """Dynamic prefix system"""
+    def get_prefix(self, bot, message):
+        """Dynamic prefix system - MUST be synchronous function"""
         if not message.guild:
             return self.config.get('default_prefix', '!')
         
