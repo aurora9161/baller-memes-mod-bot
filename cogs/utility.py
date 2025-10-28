@@ -2,9 +2,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import platform
-import psutil
 from datetime import datetime
 import time
+import os
 
 class Utility(commands.Cog):
     """Utility commands for server information and diagnostics"""
@@ -279,27 +279,32 @@ class Utility(commands.Cog):
             inline=True
         )
         
-        # System info
+        # System info - basic without psutil
+        embed.add_field(
+            name="💻 System",
+            value=f"**Python:** {platform.python_version()}\n**Discord.py:** {discord.__version__}\n**Platform:** {platform.system()}",
+            inline=True
+        )
+        
+        # Basic process info
         try:
-            process = psutil.Process()
-            memory_usage = process.memory_info().rss / 1024 / 1024  # MB
-            cpu_usage = process.cpu_percent()
-            
-            embed.add_field(
-                name="💻 System",
-                value=f"**Python:** {platform.python_version()}\n**Discord.py:** {discord.__version__}\n**Platform:** {platform.system()}",
-                inline=True
-            )
+            import resource
+            memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            # Convert to MB (Linux reports in KB, macOS in bytes)
+            if platform.system() == "Linux":
+                memory_usage = memory_usage / 1024  # KB to MB
+            else:
+                memory_usage = memory_usage / (1024 * 1024)  # Bytes to MB
             
             embed.add_field(
                 name="📈 Resources",
-                value=f"**Memory:** {memory_usage:.1f} MB\n**CPU:** {cpu_usage}%",
+                value=f"**Memory:** {memory_usage:.1f} MB\n**PID:** {os.getpid()}",
                 inline=True
             )
-        except Exception:
+        except ImportError:
             embed.add_field(
-                name="💻 System",
-                value=f"**Python:** {platform.python_version()}\n**Discord.py:** {discord.__version__}\n**Platform:** {platform.system()}",
+                name="📈 Resources",
+                value=f"**PID:** {os.getpid()}",
                 inline=True
             )
         
