@@ -52,10 +52,30 @@ class BallerMemesBot(commands.Bot):
                 "token": "YOUR_BOT_TOKEN_HERE",
                 "default_prefix": "!",
                 "owner_ids": [],
-                "database_url": "sqlite:///moderation.db",
+                "database_url": "sqlite:///data/moderation.db",
                 "embed_color": 0x00ff00,
                 "support_server": "",
-                "invite_link": ""
+                "invite_link": "",
+                "moderation": {
+                    "auto_dehoist": True,
+                    "auto_delete_invites": False,
+                    "spam_detection": True,
+                    "raid_protection": True,
+                    "max_mentions": 5,
+                    "max_emoji": 10,
+                    "slowmode_threshold": 5,
+                    "profanity_filter": True,
+                    "link_filter": False,
+                    "caps_filter": True,
+                    "repeated_text_filter": True
+                },
+                "logging": {
+                    "mod_actions": True,
+                    "message_edits": True,
+                    "message_deletes": True,
+                    "member_updates": True,
+                    "voice_updates": False
+                }
             }
             with open(config_path, 'w') as f:
                 json.dump(default_config, f, indent=4)
@@ -116,10 +136,20 @@ class BallerMemesBot(commands.Bot):
             'admin_role': None,
             'mute_role': None,
             'log_channel': None,
+            'mod_log_channel': None,
+            'member_log_channel': None,
+            'message_log_channel': None,
             'welcome_channel': None,
             'automod_enabled': True,
             'warn_threshold': 3
         }
+        
+        # Update bot status
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"{len(self.guilds)} servers | /help"
+        )
+        await self.change_presence(activity=activity)
     
     async def on_guild_remove(self, guild):
         """When bot leaves a guild"""
@@ -130,9 +160,119 @@ class BallerMemesBot(commands.Bot):
             del self.guild_configs[guild.id]
         if guild.id in self.mod_logs:
             del self.mod_logs[guild.id]
+        
+        # Update bot status
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"{len(self.guilds)} servers | /help"
+        )
+        await self.change_presence(activity=activity)
+    
+    async def on_command_error(self, ctx, error):
+        """Global error handler"""
+        # Ignore command not found errors
+        if isinstance(error, commands.CommandNotFound):
+            return
+        
+        # Handle missing permissions
+        if isinstance(error, commands.MissingPermissions):
+            embed = discord.Embed(
+                title="❌ Missing Permissions",
+                description=f"You need the following permissions: {', '.join(error.missing_permissions)}",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle bot missing permissions
+        if isinstance(error, commands.BotMissingPermissions):
+            embed = discord.Embed(
+                title="❌ Bot Missing Permissions",
+                description=f"I need the following permissions: {', '.join(error.missing_permissions)}",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle member not found
+        if isinstance(error, commands.MemberNotFound):
+            embed = discord.Embed(
+                title="❌ Member Not Found",
+                description=f"Could not find member: {error.argument}",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle user not found
+        if isinstance(error, commands.UserNotFound):
+            embed = discord.Embed(
+                title="❌ User Not Found",
+                description=f"Could not find user: {error.argument}",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle command on cooldown
+        if isinstance(error, commands.CommandOnCooldown):
+            embed = discord.Embed(
+                title="⏰ Command on Cooldown",
+                description=f"Please wait {error.retry_after:.2f} seconds before using this command again.",
+                color=discord.Color.orange()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle no private message
+        if isinstance(error, commands.NoPrivateMessage):
+            embed = discord.Embed(
+                title="❌ Guild Only Command",
+                description="This command can only be used in servers, not in DMs.",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle bad argument
+        if isinstance(error, commands.BadArgument):
+            embed = discord.Embed(
+                title="❌ Invalid Argument",
+                description=f"Invalid argument provided: {str(error)}",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle missing required argument
+        if isinstance(error, commands.MissingRequiredArgument):
+            embed = discord.Embed(
+                title="❌ Missing Argument",
+                description=f"Missing required argument: `{error.param.name}`",
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Handle check failure (blacklisted users, etc.)
+        if isinstance(error, commands.CheckFailure):
+            embed = discord.Embed(
+                title="❌ Access Denied",
+                description=str(error),
+                color=discord.Color.red()
+            )
+            return await ctx.send(embed=embed)
+        
+        # Log unknown errors
+        logging.error(f'Ignoring exception in command {ctx.command}:', exc_info=error)
+        
+        # Send generic error message
+        embed = discord.Embed(
+            title="❌ An Error Occurred",
+            description="An unexpected error occurred while processing your command.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
     
     async def setup_hook(self):
         """Setup hook called when bot starts"""
+        # Create data directory if it doesn't exist
+        data_dir = Path('data')
+        if not data_dir.exists():
+            data_dir.mkdir()
+        
         await self.load_extensions()
         
         # Sync slash commands
