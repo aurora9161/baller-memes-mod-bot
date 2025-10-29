@@ -4,21 +4,23 @@ from discord import app_commands
 from datetime import datetime
 from typing import Optional
 
-INVITE_PERMS = discord.Permissions(
-    ban_members=True,
-    kick_members=True,
-    manage_messages=True,
-    manage_roles=True,
-    manage_channels=True,
-    view_audit_log=True,
-    read_messages=True,
-    send_messages=True,
-    embed_links=True,
-    attach_files=True,
-    read_message_history=True,
-    add_reactions=True,
-    use_slash_commands=True,
-    moderate_members=True
+# Build permissions without deprecated/invalid flags
+INVITE_PERMS = (
+    discord.Permissions(
+        ban_members=True,
+        kick_members=True,
+        manage_messages=True,
+        manage_roles=True,
+        manage_channels=True,
+        view_audit_log=True,
+        read_messages=True,
+        send_messages=True,
+        embed_links=True,
+        attach_files=True,
+        read_message_history=True,
+        add_reactions=True,
+        moderate_members=True
+    )
 )
 
 class HelpView(discord.ui.View):
@@ -27,7 +29,7 @@ class HelpView(discord.ui.View):
         super().__init__(timeout=300)
         self.bot = bot
         self.user_id = user_id
-        # Add link buttons programmatically (discord.py v2 supports LinkButton via Button with url)
+        # Add link button programmatically (no invalid permissions)
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions=INVITE_PERMS)
         self.add_item(discord.ui.Button(label="🔗 Invite Bot", style=discord.ButtonStyle.link, url=invite_url))
 
@@ -170,7 +172,7 @@ class Help(commands.Cog):
             usage += f" {cmd.signature}"
         embed = discord.Embed(title=f"📖 {cmd.name}", description=cmd.description or "No description.", color=discord.Color.blue())
         embed.add_field(name="Usage", value=f"`{usage}`", inline=False)
-        if cmd.aliases:
+        if getattr(cmd, 'aliases', None):
             embed.add_field(name="Aliases", value=", ".join(f"`{a}`" for a in cmd.aliases), inline=False)
         embed.add_field(name="Category", value=cmd.cog.qualified_name if cmd.cog else "General", inline=True)
         embed.timestamp = datetime.utcnow()
