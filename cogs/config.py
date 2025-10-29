@@ -4,6 +4,7 @@ from discord import app_commands
 import json
 from datetime import datetime
 import asyncio
+from cogs.db_hooks import ConfigPersistHooks
 
 class Configuration(commands.Cog):
     """Server configuration and setup commands"""
@@ -30,7 +31,7 @@ class Configuration(commands.Cog):
         # Basic settings
         embed.add_field(
             name="Basic Settings",
-            value=f"**Prefix:** `{guild_config.get('prefix', self.bot.config.get('default_prefix', '!'))}\n**Warn Threshold:** {guild_config.get('warn_threshold', 3)}",
+            value=f"**Prefix:** `{guild_config.get('prefix', self.bot.config.get('default_prefix', '!'))}`\n**Warn Threshold:** {guild_config.get('warn_threshold', 3)}",
             inline=False
         )
         
@@ -90,6 +91,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['prefix'] = new_prefix
+        await ConfigPersistHooks.set_config_update(ctx, prefix=new_prefix)
         
         embed = discord.Embed(
             title="✅ Prefix Updated",
@@ -109,6 +111,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['mod_role'] = role.id
+        await ConfigPersistHooks.set_config_update(ctx, mod_role=role.id)
         
         embed = discord.Embed(
             title="✅ Moderator Role Set",
@@ -129,6 +132,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['admin_role'] = role.id
+        await ConfigPersistHooks.set_config_update(ctx, admin_role=role.id)
         
         embed = discord.Embed(
             title="✅ Administrator Role Set",
@@ -149,6 +153,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['log_channel'] = channel.id
+        await ConfigPersistHooks.set_config_update(ctx, log_channel=channel.id)
         
         # Send test message
         test_embed = discord.Embed(
@@ -187,6 +192,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['mod_log_channel'] = channel.id
+        await ConfigPersistHooks.set_config_update(ctx, mod_log_channel=channel.id)
         
         embed = discord.Embed(
             title="✅ Moderation Log Channel Set",
@@ -214,6 +220,7 @@ class Configuration(commands.Cog):
             self.bot.guild_configs[ctx.guild.id] = {}
         
         self.bot.guild_configs[ctx.guild.id]['warn_threshold'] = threshold
+        await ConfigPersistHooks.set_config_update(ctx, warn_threshold=threshold)
         
         embed = discord.Embed(
             title="✅ Warning Threshold Set",
@@ -281,6 +288,7 @@ class Configuration(commands.Cog):
                 'member_log_channel': member_logs.id,
                 'message_log_channel': message_logs.id
             })
+            await ConfigPersistHooks.set_config_update(ctx, log_channel=log_channel.id, mod_log_channel=log_channel.id, member_log_channel=member_logs.id, message_log_channel=message_logs.id)
             
             # Create muted role
             muted_role = await ctx.guild.create_role(
@@ -301,6 +309,7 @@ class Configuration(commands.Cog):
                     )
             
             self.bot.guild_configs[ctx.guild.id]['mute_role'] = muted_role.id
+            await ConfigPersistHooks.set_config_update(ctx, mute_role=muted_role.id)
             
             # Success embed
             success_embed = discord.Embed(
