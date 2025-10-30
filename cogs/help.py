@@ -29,7 +29,6 @@ class HelpView(discord.ui.View):
         super().__init__(timeout=300)
         self.bot = bot
         self.user_id = user_id
-        # Add link button programmatically (no invalid permissions)
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions=INVITE_PERMS)
         self.add_item(discord.ui.Button(label="🔗 Invite Bot", style=discord.ButtonStyle.link, url=invite_url))
 
@@ -43,7 +42,6 @@ class HelpView(discord.ui.View):
         placeholder="🔍 Choose a command category...",
         options=[
             discord.SelectOption(label="🛡️ Moderation", value="moderation", description="Moderation commands"),
-            discord.SelectOption(label="🤖 Auto-Moderation", value="automod", description="Automod & filters"),
             discord.SelectOption(label="⚙️ Configuration", value="config", description="Setup & settings"),
             discord.SelectOption(label="📊 Utility", value="utility", description="Info & tools"),
             discord.SelectOption(label="📝 Logging", value="logging", description="Audit logs"),
@@ -72,7 +70,7 @@ class HelpView(discord.ui.View):
             ),
             color=discord.Color.blue()
         )
-        embed.add_field(name="Quick Commands", value="`/setup`, `/config`, `/ban`, `/automod`, `/logs`", inline=False)
+        embed.add_field(name="Quick Commands", value="`/setup`, `/config`, `/ban`, `/logs`", inline=False)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.set_footer(text="Use /help <command> for detailed usage")
         embed.timestamp = datetime.utcnow()
@@ -89,18 +87,11 @@ class HelpView(discord.ui.View):
                 "`/mute @user [duration] [reason]` - Mute a member",
                 "`/timeout @user <duration> [reason]` - Timeout a member",
                 "`/purge <amount> [user]` - Bulk delete",
-                "`/slowmode <seconds>` - Channel slowmode"
+                "`/slowmode <seconds>` - Channel slowmode",
+                "`/warnings [@user]` - View warnings",
+                "`/clearwarnings @user` - Clear warnings"
             ]
             color = discord.Color.red()
-        elif category == "automod":
-            title = "🤖 Auto-Moderation"
-            lines = [
-                "`/automod spam_detection true|false`",
-                "`/automod profanity_filter true|false`",
-                "`/automod max_mentions <number>`",
-                "`/violations @user` | `/clearviolations @user`"
-            ]
-            color = discord.Color.orange()
         elif category == "config":
             title = "⚙️ Configuration"
             lines = [
@@ -108,7 +99,8 @@ class HelpView(discord.ui.View):
                 "`/config` - View settings",
                 "`/config prefix <prefix>`",
                 "`/config modrole @role` | `/config adminrole @role`",
-                "`/config logchannel #channel` | `/config modlogchannel #channel`"
+                "`/config logchannel #channel` | `/config modlogchannel #channel`",
+                "`/warnthreshold <1-10>` - Set warning threshold"
             ]
             color = discord.Color.green()
         elif category == "utility":
@@ -122,8 +114,7 @@ class HelpView(discord.ui.View):
         elif category == "logging":
             title = "📝 Logging"
             lines = [
-                "`/logs [type] [amount]` - View logs",
-                "`/violations @user` - AutoMod violations"
+                "`/logs [type] [amount]` - View logs"
             ]
             color = discord.Color.purple()
         elif category == "owner":
